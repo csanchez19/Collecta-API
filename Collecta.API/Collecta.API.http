@@ -1,6 +1,43 @@
-@Collecta.API_HostAddress = http://localhost:5215
+@host = http://localhost:5215
 
-GET {{Collecta.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Register
+# @name register
+POST {{host}}/api/auth/register
+Content-Type: application/json
 
-###
+{
+  "email": "dani@collecta.test",
+  "displayName": "Dani",
+  "password": "coleccion123"
+}
+
+### Login
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "dani@collecta.test",
+  "password": "coleccion123"
+}
+
+### Current user (uses the token from Login)
+GET {{host}}/api/auth/me
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Refresh (rotates: the old refresh token stops working)
+# @name refresh
+POST {{host}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
+
+### Logout
+POST {{host}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh.response.body.$.refreshToken}}"
+}
