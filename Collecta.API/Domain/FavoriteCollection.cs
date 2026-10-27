@@ -2,11 +2,10 @@ namespace Collecta.API.Domain;
 
 public class FavoriteCollection
 {
-    public string UserId { get; set; } = string.Empty;
-    public string CollectionId { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
+    public Guid CollectionId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
-    public User? User { get; set; }
-    public Collection? Collection { get; set; }
+    public User User { get; set; } = null!;
+    public Collection Collection { get; set; } = null!;
 }
