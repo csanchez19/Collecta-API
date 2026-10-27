@@ -8,28 +8,29 @@
 
 ---
 
-## ⚠️ CRITICAL RULES — Database Migrations
+## ⚠️ CRITICAL RULES — Git & Database Work
 
-### Migration Workflow
+### Git Commits — CARLES ONLY
+**Claude NEVER commits code.** Only Carles makes commits.
+- Claude writes/edits files
+- Carles reviews and commits
+- All git commands require explicit approval from Carles
 
-**Migrations are ONLY done on the `db-migrations` branch.**
+### Domain Models & Migrations — db-migrations Branch ONLY
+**All work on entities and migrations happens ONLY on `db-migrations` branch.**
 
-When working with migrations:
-1. ✅ **ALLOWED**: `dotnet ef migrations add <MigrationName>`
-   - Creates a migration file in `Infrastructure/Migrations/`
-   - Commits to `db-migrations` branch
-   - Creates a PR to `main` for review
+Development workflow:
+1. ✅ **ON db-migrations**: Write entities (Domain/), create DbContext
+2. ✅ **ON db-migrations**: `dotnet ef migrations add <MigrationName>`
+3. ❌ **FORBIDDEN**: `dotnet ef database update` — Claude NEVER runs this
+4. ❌ **NO entities in main** — main stays clean, only features go there
+5. 🔄 Carles reviews and handles PR/merge to main after migrations work
 
-2. ❌ **FORBIDDEN**: `dotnet ef database update`
-   - NEVER run this command
-   - Database updates happen only after PR approval on `main`
-   - This is enforced to prevent accidental DB changes during development
-
-3. 🔄 **Process**:
-   - Create migration on `db-migrations`
-   - Create PR to `main` (migrations only, no other code)
-   - Wait for approval
-   - Merge to `main` (CI/CD runs `dotnet ef database update`)
+When adding new entities:
+- Create in `Domain/`
+- Update `AppDbContext.cs` with DbContext config
+- Generate migration with `dotnet ef migrations add <Name>`
+- Leave `dotnet ef database update` for Carles (CI/CD or manual)
 
 ---
 

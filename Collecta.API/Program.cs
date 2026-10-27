@@ -1,7 +1,15 @@
+using Collecta.API.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+
+// Database
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=collecta.db";
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
 
 // CORS configuration
 builder.Services.AddCors(options =>
