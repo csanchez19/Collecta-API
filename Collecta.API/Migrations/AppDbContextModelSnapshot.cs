@@ -17,9 +17,45 @@ namespace Collecta.API.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
+            modelBuilder.Entity("Collecta.API.Domain.CatalogItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("MarketValueCents")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId");
+
+                    b.ToTable("CatalogItems");
+                });
+
             modelBuilder.Entity("Collecta.API.Domain.Collection", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AccentHue")
@@ -30,45 +66,30 @@ namespace Collecta.API.Migrations
 
                     b.Property<string>("Kind")
                         .IsRequired()
+                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("KindLabel")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("Mine")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("OwnedCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Popularity")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TotalCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Collections");
                 });
 
             modelBuilder.Entity("Collecta.API.Domain.FavoriteCollection", b =>
                 {
-                    b.Property<string>("UserId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CollectionId")
+                    b.Property<Guid>("CollectionId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -81,45 +102,43 @@ namespace Collecta.API.Migrations
                     b.ToTable("FavoriteCollections");
                 });
 
-            modelBuilder.Entity("Collecta.API.Domain.Item", b =>
+            modelBuilder.Entity("Collecta.API.Domain.RefreshToken", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CollectionId")
-                        .IsRequired()
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Description")
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenHash")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ImageUrl")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("MarketValue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("Owned")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CollectionId");
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
 
-                    b.ToTable("Items");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Collecta.API.Domain.User", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -127,10 +146,12 @@ namespace Collecta.API.Migrations
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
@@ -139,18 +160,42 @@ namespace Collecta.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Collecta.API.Domain.Collection", b =>
+            modelBuilder.Entity("Collecta.API.Domain.UserItem", b =>
                 {
-                    b.HasOne("Collecta.API.Domain.User", "User")
-                        .WithMany("Collections")
-                        .HasForeignKey("UserId")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AcquiredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("UserId", "CatalogItemId");
+
+                    b.HasIndex("CatalogItemId");
+
+                    b.ToTable("UserItems");
+                });
+
+            modelBuilder.Entity("Collecta.API.Domain.CatalogItem", b =>
+                {
+                    b.HasOne("Collecta.API.Domain.Collection", "Collection")
+                        .WithMany("Items")
+                        .HasForeignKey("CollectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Collection");
                 });
 
             modelBuilder.Entity("Collecta.API.Domain.FavoriteCollection", b =>
@@ -172,15 +217,34 @@ namespace Collecta.API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Collecta.API.Domain.Item", b =>
+            modelBuilder.Entity("Collecta.API.Domain.RefreshToken", b =>
                 {
-                    b.HasOne("Collecta.API.Domain.Collection", "Collection")
-                        .WithMany("Items")
-                        .HasForeignKey("CollectionId")
+                    b.HasOne("Collecta.API.Domain.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Collection");
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Collecta.API.Domain.UserItem", b =>
+                {
+                    b.HasOne("Collecta.API.Domain.CatalogItem", "CatalogItem")
+                        .WithMany()
+                        .HasForeignKey("CatalogItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Collecta.API.Domain.User", "User")
+                        .WithMany("OwnedItems")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CatalogItem");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Collecta.API.Domain.Collection", b =>
@@ -190,9 +254,11 @@ namespace Collecta.API.Migrations
 
             modelBuilder.Entity("Collecta.API.Domain.User", b =>
                 {
-                    b.Navigation("Collections");
-
                     b.Navigation("Favorites");
+
+                    b.Navigation("OwnedItems");
+
+                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

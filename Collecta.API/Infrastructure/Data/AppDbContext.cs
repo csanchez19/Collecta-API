@@ -3,50 +3,76 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Collecta.API.Infrastructure.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<User> Users { get; set; } = null!;
-    public DbSet<Collection> Collections { get; set; } = null!;
-    public DbSet<Item> Items { get; set; } = null!;
-    public DbSet<FavoriteCollection> FavoriteCollections { get; set; } = null!;
-
-    public AppDbContext(DbContextOptions<AppDbContext> options)
-        : base(options) { }
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Collection> Collections => Set<Collection>();
+    public DbSet<CatalogItem> CatalogItems => Set<CatalogItem>();
+    public DbSet<UserItem> UserItems => Set<UserItem>();
+    public DbSet<FavoriteCollection> FavoriteCollections => Set<FavoriteCollection>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<User>(user =>
+        {
+            user.Property(u => u.Email).HasMaxLength(256);
+            user.Property(u => u.DisplayName).HasMaxLength(50);
+            user.HasIndex(u => u.Email).IsUnique();
+        });
 
-        // FavoriteCollection composite key
-        modelBuilder.Entity<FavoriteCollection>()
-            .HasKey(fc => new { fc.UserId, fc.CollectionId });
+        modelBuilder.Entity<Collection>(collection =>
+        {
+            collection.Property(c => c.Name).HasMaxLength(100);
+            collection.Property(c => c.KindLabel).HasMaxLength(100);
+            collection.Property(c => c.Kind).HasConversion<string>().HasMaxLength(20);
+        });
 
-        // User → Collections (one-to-many)
-        modelBuilder.Entity<Collection>()
-            .HasOne(c => c.User)
-            .WithMany(u => u.Collections)
-            .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CatalogItem>(item =>
+        {
+            item.Property(i => i.Name).HasMaxLength(150);
+            item.Property(i => i.Code).HasMaxLength(32);
+            item.Property(i => i.ImageUrl).HasMaxLength(2048);
+            item.HasOne(i => i.Collection)
+                .WithMany(c => c.Items)
+                .HasForeignKey(i => i.CollectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Collection → Items (one-to-many)
-        modelBuilder.Entity<Item>()
-            .HasOne(i => i.Collection)
-            .WithMany(c => c.Items)
-            .HasForeignKey(i => i.CollectionId)
-            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<UserItem>(owned =>
+        {
+            owned.HasKey(ui => new { ui.UserId, ui.CatalogItemId });
+            owned.HasOne(ui => ui.User)
+                .WithMany(u => u.OwnedItems)
+                .HasForeignKey(ui => ui.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            owned.HasOne(ui => ui.CatalogItem)
+                .WithMany()
+                .HasForeignKey(ui => ui.CatalogItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // User → FavoriteCollection
-        modelBuilder.Entity<FavoriteCollection>()
-            .HasOne(fc => fc.User)
-            .WithMany(u => u.Favorites)
-            .HasForeignKey(fc => fc.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<FavoriteCollection>(favorite =>
+        {
+            favorite.HasKey(f => new { f.UserId, f.CollectionId });
+            favorite.HasOne(f => f.User)
+                .WithMany(u => u.Favorites)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            favorite.HasOne(f => f.Collection)
+                .WithMany()
+                .HasForeignKey(f => f.CollectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Collection → FavoriteCollection
-        modelBuilder.Entity<FavoriteCollection>()
-            .HasOne(fc => fc.Collection)
-            .WithMany()
-            .HasForeignKey(fc => fc.CollectionId)
-            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<RefreshToken>(token =>
+        {
+            token.Property(t => t.TokenHash).HasMaxLength(64);
+            token.HasIndex(t => t.TokenHash).IsUnique();
+            token.HasOne(t => t.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }
