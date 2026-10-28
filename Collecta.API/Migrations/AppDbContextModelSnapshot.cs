@@ -190,6 +190,22 @@ namespace Collecta.API.Migrations
                     b.ToTable("FavoriteCollections");
                 });
 
+            modelBuilder.Entity("Collecta.API.Domain.PriceSnapshot", b =>
+                {
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<long>("ValueCents")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CatalogItemId", "Date");
+
+                    b.ToTable("PriceSnapshots");
+                });
+
             modelBuilder.Entity("Collecta.API.Domain.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -275,6 +291,24 @@ namespace Collecta.API.Migrations
                     b.ToTable("UserItems");
                 });
 
+            modelBuilder.Entity("Collecta.API.Domain.WishlistItem", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "CatalogItemId");
+
+                    b.HasIndex("CatalogItemId");
+
+                    b.ToTable("WishlistItems");
+                });
+
             modelBuilder.Entity("Collecta.API.Domain.CatalogItem", b =>
                 {
                     b.HasOne("Collecta.API.Domain.CollectionSet", "Set")
@@ -316,6 +350,17 @@ namespace Collecta.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Collecta.API.Domain.PriceSnapshot", b =>
+                {
+                    b.HasOne("Collecta.API.Domain.CatalogItem", "CatalogItem")
+                        .WithMany("PriceHistory")
+                        .HasForeignKey("CatalogItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CatalogItem");
+                });
+
             modelBuilder.Entity("Collecta.API.Domain.RefreshToken", b =>
                 {
                     b.HasOne("Collecta.API.Domain.User", "User")
@@ -346,6 +391,30 @@ namespace Collecta.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Collecta.API.Domain.WishlistItem", b =>
+                {
+                    b.HasOne("Collecta.API.Domain.CatalogItem", "CatalogItem")
+                        .WithMany()
+                        .HasForeignKey("CatalogItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Collecta.API.Domain.User", "User")
+                        .WithMany("Wishlist")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CatalogItem");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Collecta.API.Domain.CatalogItem", b =>
+                {
+                    b.Navigation("PriceHistory");
+                });
+
             modelBuilder.Entity("Collecta.API.Domain.Collection", b =>
                 {
                     b.Navigation("Sets");
@@ -363,6 +432,8 @@ namespace Collecta.API.Migrations
                     b.Navigation("OwnedItems");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("Wishlist");
                 });
 #pragma warning restore 612, 618
         }

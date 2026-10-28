@@ -76,6 +76,10 @@ catalog rows.
   upsert instead of duplicating; hand-made rows leave both null.
 - `UserItem` — "user owns this item" (composite key user + item, quantity).
 - `FavoriteCollection` — user favourites (composite key).
+- `WishlistItem` — "user is looking for this item" (composite key user + item).
+- `PriceSnapshot` — an item's market value on one day (key item + date) for
+  the price chart; importers upsert one per item and day. The current price
+  stays on `CatalogItem.MarketValueCents`.
 - `RefreshToken` — stores only the SHA-256 hash of the token.
 
 `ownedCount`, `totalCount`, `mine` and `popularity` that the frontend shows are

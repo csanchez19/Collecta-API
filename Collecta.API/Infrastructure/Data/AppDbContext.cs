@@ -11,6 +11,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<CatalogItem> CatalogItems => Set<CatalogItem>();
     public DbSet<UserItem> UserItems => Set<UserItem>();
     public DbSet<FavoriteCollection> FavoriteCollections => Set<FavoriteCollection>();
+    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
+    public DbSet<PriceSnapshot> PriceSnapshots => Set<PriceSnapshot>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -89,6 +91,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             favorite.HasOne(f => f.Collection)
                 .WithMany()
                 .HasForeignKey(f => f.CollectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WishlistItem>(wished =>
+        {
+            wished.HasKey(w => new { w.UserId, w.CatalogItemId });
+            wished.HasOne(w => w.User)
+                .WithMany(u => u.Wishlist)
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            wished.HasOne(w => w.CatalogItem)
+                .WithMany()
+                .HasForeignKey(w => w.CatalogItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // One row per item and day; the key also serves the chart's range query.
+        modelBuilder.Entity<PriceSnapshot>(snapshot =>
+        {
+            snapshot.HasKey(p => new { p.CatalogItemId, p.Date });
+            snapshot.HasOne(p => p.CatalogItem)
+                .WithMany(i => i.PriceHistory)
+                .HasForeignKey(p => p.CatalogItemId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

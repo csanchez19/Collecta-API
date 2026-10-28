@@ -10,5 +10,6 @@ public class User
 
     public ICollection<UserItem> OwnedItems { get; set; } = [];
     public ICollection<FavoriteCollection> Favorites { get; set; } = [];
+    public ICollection<WishlistItem> Wishlist { get; set; } = [];
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
 }

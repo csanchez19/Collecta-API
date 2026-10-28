@@ -19,4 +19,5 @@ public class CatalogItem
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public CollectionSet Set { get; set; } = null!;
+    public ICollection<PriceSnapshot> PriceHistory { get; set; } = [];
 }
