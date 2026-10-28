@@ -28,7 +28,7 @@ public sealed class CollectionsService(AppDbContext db)
         }
 
         return await db.CatalogItems
-            .Where(i => i.CollectionId == collectionId)
+            .Where(i => i.Set.CollectionId == collectionId)
             .OrderBy(i => i.Code).ThenBy(i => i.Name)
             .Select(i => new CatalogItemResponse(
                 i.Id,
@@ -74,10 +74,11 @@ public sealed class CollectionsService(AppDbContext db)
             c.Kind,
             c.KindLabel,
             c.AccentHue,
-            c.Items.Count,
-            db.UserItems.Count(ui => ui.UserId == userId && ui.CatalogItem.CollectionId == c.Id),
+            // Items hang from the collection's sets.
+            c.Sets.Sum(s => s.Items.Count),
+            db.UserItems.Count(ui => ui.UserId == userId && ui.CatalogItem.Set.CollectionId == c.Id),
             db.UserItems
-                .Where(ui => ui.CatalogItem.CollectionId == c.Id)
+                .Where(ui => ui.CatalogItem.Set.CollectionId == c.Id)
                 .Select(ui => ui.UserId)
                 .Distinct()
                 .Count(),
