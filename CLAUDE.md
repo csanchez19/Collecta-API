@@ -79,6 +79,35 @@ dotnet run --project Collecta.Importer -- tcgdex --lang en --prices-only   # ref
   as URLs (`…/high.webp`, `…/low.webp`); set logo/symbol stored only if the
   CDN actually serves them. TCGdex returns slightly different prices between
   calls, so re-runs report some "actualizadas" even within minutes.
+- Every run (including `--prices-only`) records today's price of each item in
+  `PriceSnapshots` (one row per item and day); run it periodically and the
+  price chart fills up.
+
+## API
+
+Features live in `Collecta.API/Features/<Feature>/` (controller + service +
+contracts). Try every endpoint from `Collecta.API.http`.
+
+- **Public catalog** (`[AllowAnonymous]`): `GET /api/collections[/{id}]`,
+  `/api/collections/{id}/sets`, `/api/sets/{id}`, `/api/sets/{id}/items` (whole
+  set in album order — `ItemQueries.InAlbumOrder`), `/api/items/{id}`,
+  `/api/items/{id}/prices?range=7d|30d|1y`. A signed-in caller also gets their
+  own numbers (owned copies, wishlist, favourites); services take
+  `User.FindUserId()` and use `Guid.Empty` (matches no rows) for anonymous.
+- **`/api/me/*`** (`[Authorize]`): `PUT items/{id}` `{copies}` (0 removes;
+  owning drops the wish), `GET items/recent`, `GET|PUT|DELETE wishlist[/{id}]`
+  (409 if already owned), `PUT|DELETE favorites/{collectionId}`,
+  `GET progression`.
+- `RejectInvalidTokenFilter` (global): a request that *sends* a token must send
+  a valid one, even on public endpoints — an expired token gets 401 (so the app
+  refreshes) instead of silently being treated as anonymous.
+- Every item list shares one projection (`ItemQueries.ForUser` →
+  `ItemResponse`); add fields there, not per endpoint. `RarityTier` (0–3)
+  collapses source rarity names for clients.
+- Progression is derived, never stored: `ProgressionService.XpPerItem` (40 per
+  distinct owned item, keep in sync with the frontend's `XP_PER_NEW_ITEM`),
+  levels of 250 XP, achievements computed from ownership (pages are 9 items in
+  album order).
 
 ## Configuration
 

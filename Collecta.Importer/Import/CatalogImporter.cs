@@ -165,10 +165,41 @@ public sealed class CatalogImporter(Func<AppDbContext> createDb, TextWriter log)
             }
         }
 
+        await RecordPricesAsync(db, set, ct);
+
         var updated = db.ChangeTracker.Entries<CatalogItem>().Count(entry => entry.State == EntityState.Modified);
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
         return (added, updated);
+    }
+
+    /// <summary>
+    /// Today's price of every priced item in the set, for the history chart. One
+    /// row per item and day: running again the same day overwrites it.
+    /// </summary>
+    private static async Task RecordPricesAsync(AppDbContext db, CollectionSet set, CancellationToken ct)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var recorded = await db.PriceSnapshots
+            .Where(p => p.Date == today && p.CatalogItem.SetId == set.Id)
+            .ToDictionaryAsync(p => p.CatalogItemId, ct);
+
+        // Materialised first: adding snapshots below changes the tracker being enumerated.
+        var priced = db.ChangeTracker.Entries<CatalogItem>()
+            .Select(entry => entry.Entity)
+            .Where(item => item.MarketValueCents is not null)
+            .ToList();
+        foreach (var item in priced)
+        {
+            if (recorded.TryGetValue(item.Id, out var snapshot))
+            {
+                snapshot.ValueCents = item.MarketValueCents!.Value;
+            }
+            else
+            {
+                db.PriceSnapshots.Add(new PriceSnapshot { CatalogItemId = item.Id, Date = today, ValueCents = item.MarketValueCents!.Value });
+            }
+        }
     }
 
     private static void Apply(CatalogItem item, ImportedItem imported)
