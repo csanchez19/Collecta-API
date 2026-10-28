@@ -10,7 +10,7 @@ public class CatalogItem
     public string? Rarity { get; set; }
     public string? ImageUrl { get; set; }
     public string? ThumbnailUrl { get; set; }
-    // Stored in cents: SQLite cannot sort or aggregate decimal server-side.
+    // Stored in whole cents so money stays exact and sums never drift.
     public long? MarketValueCents { get; set; }
     /// <summary>Kind-specific details as JSON (HP, types, attacks for cards; scale, series for cars…).</summary>
     public string? Attributes { get; set; }

@@ -1,7 +1,7 @@
 # CLAUDE.md — Collecta.API
 
 Backend for the Collecta mobile app (frontend lives in the sibling `Collecta/`
-repo). ASP.NET Core 10, EF Core 10 + SQLite, JWT auth. The project lives in
+repo). ASP.NET Core 10, EF Core 10 + PostgreSQL (Npgsql), JWT auth. The project lives in
 `Collecta.API/`; run every `dotnet` command from there.
 
 ## Hard rules
@@ -29,6 +29,7 @@ Before starting a task, check the current branch and propose the right branch.
 ## Running locally
 
 ```bash
+docker compose up -d       # repo root: PostgreSQL 18 on localhost:5432 (container collecta-db)
 cd Collecta.API
 dotnet run                 # http://localhost:5215, docs at /scalar
 dotnet build
@@ -36,12 +37,25 @@ dotnet ef migrations add <Name>   # db-migrations branch only
 ```
 
 `dotnet-ef` is a global tool in `~/.dotnet/tools` (must be on PATH).
-`collecta.db` is local and git-ignored.
+
+First-time setup: copy `.env.example` to `.env` (git-ignored) and choose
+`POSTGRES_PASSWORD`; then store the matching connection string as a user-secret:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Host=localhost;Port=5432;Database=collecta;Username=collecta;Password=<same as .env>"
+```
+
+Claude tests migrations only against a throwaway database in the same container
+(`createdb` + the script from `dotnet ef migrations script`), never `collecta`.
 
 ## Configuration
 
-- `Jwt:Secret` lives in **user-secrets** (`dotnet user-secrets list`), never in
-  `appsettings*.json`. `Jwt:Issuer` / `Jwt:Audience` are in `appsettings.json`.
+- `Jwt:Secret` and `ConnectionStrings:DefaultConnection` live in
+  **user-secrets** (`dotnet user-secrets list`), never in `appsettings*.json`;
+  outside Development they come from environment variables
+  (`ConnectionStrings__DefaultConnection`). `Jwt:Issuer` / `Jwt:Audience` are in
+  `appsettings.json`. The app refuses to start without a connection string.
 - CORS origins come from `Cors:AllowedOrigins`; Development allows the Angular
   dev server (4200), `ionic serve` (8100) and Capacitor (`capacitor://localhost`,
   `http://localhost`).
@@ -54,8 +68,12 @@ catalog rows.
 
 - `Collection` — catalog theme published by admins (name, `CollectionKind`
   enum stored as text, kind label, accent hue).
-- `CatalogItem` — piece in a collection; market value in cents (`long`)
-  because SQLite cannot sort/aggregate `decimal`.
+- `CollectionSet` — groups the items of a collection (a Pokémon expansion, a
+  Hot Wheels series…): series, release date, logo/symbol URLs.
+- `CatalogItem` — piece in a set; market value in whole cents (`long`);
+  kind-specific details in `Attributes` (`jsonb`).
+- Catalog rows carry `Source` + `ExternalId` (unique together) so importers
+  upsert instead of duplicating; hand-made rows leave both null.
 - `UserItem` — "user owns this item" (composite key user + item, quantity).
 - `FavoriteCollection` — user favourites (composite key).
 - `RefreshToken` — stores only the SHA-256 hash of the token.
