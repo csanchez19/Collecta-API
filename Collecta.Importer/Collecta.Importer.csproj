@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Same secrets as Collecta.API: the importer reads ConnectionStrings:DefaultConnection from there. -->
+    <UserSecretsId>31882e4a-adbc-4837-9fba-1c0facca0840</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Brings the ASP.NET Core shared framework the referenced API project needs (configuration, user-secrets). -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Match the EF Core version Collecta.API compiles against (its Tools package pins it); Npgsql alone would pull an older one. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reuses the API's entities and AppDbContext: one data model, no copies. -->
+    <ProjectReference Include="..\Collecta.API\Collecta.API.csproj" />
+  </ItemGroup>
+
+</Project>

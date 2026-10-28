@@ -60,3 +60,6 @@ nunit-*.xml
 *.db
 *.db-shm
 *.db-wal
+
+# PostgreSQL backups (pg_dump)
+*.dump

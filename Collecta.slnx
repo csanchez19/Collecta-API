@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Collecta.API/Collecta.API.csproj" />
+  <Project Path="Collecta.Importer/Collecta.Importer.csproj" />
 </Solution>
