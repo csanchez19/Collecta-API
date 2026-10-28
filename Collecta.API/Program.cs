@@ -1,4 +1,7 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Collecta.API.Features.Auth;
+using Collecta.API.Features.Collections;
 using Collecta.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -6,9 +9,11 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 builder.Services.AddProblemDetails();
 builder.Services.AddCollectaAuth();
+builder.Services.AddScoped<CollectionsService>();
 
 // Holds the database password, so it comes from user-secrets (dev) or environment variables, never appsettings.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")

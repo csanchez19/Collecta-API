@@ -41,3 +41,24 @@ Content-Type: application/json
 {
   "refreshToken": "{{refresh.response.body.$.refreshToken}}"
 }
+
+### Collections for the logged-in user (uses the token from Login)
+# @name collections
+GET {{host}}/api/collections
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### One collection (first of the list)
+GET {{host}}/api/collections/{{collections.response.body.$[0].id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Items of that collection
+GET {{host}}/api/collections/{{collections.response.body.$[0].id}}/items
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Mark as favourite
+PUT {{host}}/api/collections/{{collections.response.body.$[0].id}}/favorite
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Remove favourite
+DELETE {{host}}/api/collections/{{collections.response.body.$[0].id}}/favorite
+Authorization: Bearer {{login.response.body.$.accessToken}}
