@@ -23,7 +23,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         });
 
         // Imported rows are identified by (Source, ExternalId) so re-imports update instead of duplicating.
-        // Rows added by hand leave both null; SQLite treats NULLs as distinct in a unique index.
+        // Rows added by hand leave both null; PostgreSQL treats NULLs as distinct in a unique index.
         modelBuilder.Entity<Collection>(collection =>
         {
             collection.Property(c => c.Name).HasMaxLength(100);
@@ -58,6 +58,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             item.Property(i => i.ThumbnailUrl).HasMaxLength(2048);
             item.Property(i => i.Source).HasMaxLength(20);
             item.Property(i => i.ExternalId).HasMaxLength(64);
+            item.Property(i => i.Attributes).HasColumnType("jsonb");
             item.HasIndex(i => new { i.Source, i.ExternalId }).IsUnique();
             item.HasOne(i => i.Set)
                 .WithMany(s => s.Items)
