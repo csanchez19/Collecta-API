@@ -15,6 +15,9 @@ repo). ASP.NET Core 10, EF Core 10 + PostgreSQL (Npgsql), JWT auth. The project 
 3. **Schema work only on `db-migrations`.** Entities (`Domain/`),
    `AppDbContext` and `dotnet ef migrations add <Name>` happen only on that
    branch. Claude may run `migrations add`; Carles commits and applies it.
+4. **Claude never runs the importer against `collecta`** (nor seeds data any
+   other way). Carles loads data. Claude tests imports only on a throwaway
+   database (`--connection` pointing at it) and drops it afterwards.
 
 ## Branches
 
@@ -49,6 +52,34 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
 Claude tests migrations only against a throwaway database in the same container
 (`createdb` + the script from `dotnet ef migrations script`), never `collecta`.
 
+## Catalog importer (`Collecta.Importer/`)
+
+Console app that loads external catalogs into the database. Run by hand from
+the repo root; it reuses the API's `AppDbContext` and reads the same
+`ConnectionStrings:DefaultConnection` user-secret (or `--connection`).
+
+```bash
+dotnet run --project Collecta.Importer -- tcgdex --lang en                 # whole catalog
+dotnet run --project Collecta.Importer -- tcgdex --lang en --set sv03.5    # one set (repeatable)
+dotnet run --project Collecta.Importer -- tcgdex --lang en --skip-complete # resume a cut-short run
+dotnet run --project Collecta.Importer -- tcgdex --lang en --prices-only   # refresh market values
+```
+
+- **Each language is its own catalog.** `--lang en` fills the collection
+  "Pokémon TCG (EN)" (`ExternalId` `pokemon:en`); sets and items get
+  language-prefixed ids (`en:sv03.5`, `en:sv03.5-006`). An English and a
+  Spanish card are different items; owning one says nothing about the other.
+  Adding a language is only a new `--lang`.
+- **Layers:** `Import/ICatalogSource` (a source lists sets and loads one set
+  as source-neutral `Imported*` records) → `Import/CatalogImporter` (generic
+  upsert by `Source` + `ExternalId`, one transaction per set, never deletes).
+  `Tcgdex/` is the only source today; a new game or API is a new source class.
+- Collection name/label/hue are only set on creation (admins may edit them).
+- TCGdex: Cardmarket `trend` price in EUR (falls back to `avg`); images stored
+  as URLs (`…/high.webp`, `…/low.webp`); set logo/symbol stored only if the
+  CDN actually serves them. TCGdex returns slightly different prices between
+  calls, so re-runs report some "actualizadas" even within minutes.
+
 ## Configuration
 
 - `Jwt:Secret` and `ConnectionStrings:DefaultConnection` live in
@@ -74,6 +105,8 @@ catalog rows.
   kind-specific details in `Attributes` (`jsonb`).
 - Catalog rows carry `Source` + `ExternalId` (unique together) so importers
   upsert instead of duplicating; hand-made rows leave both null.
+- Languages are not a column: a catalog in another language is another
+  collection with its own sets and items (see the importer section).
 - `UserItem` — "user owns this item" (composite key user + item, quantity).
 - `FavoriteCollection` — user favourites (composite key).
 - `RefreshToken` — stores only the SHA-256 hash of the token.
