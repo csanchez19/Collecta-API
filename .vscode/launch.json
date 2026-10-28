@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Collecta.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/Collecta.API/bin/Debug/net10.0/Collecta.API.dll",
+      // collecta.db is a relative path: running from anywhere else creates an empty database.
+      "cwd": "${workspaceFolder}/Collecta.API",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5215"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/scalar"
+      },
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    }
+  ]
+}
