@@ -42,7 +42,14 @@ Content-Type: application/json
   "refreshToken": "{{refresh.response.body.$.refreshToken}}"
 }
 
-### Collections for the logged-in user (uses the token from Login)
+### ---------------------------------------------------------------------------
+### Public catalog — works without a token; with one, adds your own numbers.
+### ---------------------------------------------------------------------------
+
+### Collections (anonymous)
+GET {{host}}/api/collections
+
+### Collections with your progress (uses the token from Login)
 # @name collections
 GET {{host}}/api/collections
 Authorization: Bearer {{login.response.body.$.accessToken}}
@@ -51,14 +58,64 @@ Authorization: Bearer {{login.response.body.$.accessToken}}
 GET {{host}}/api/collections/{{collections.response.body.$[0].id}}
 Authorization: Bearer {{login.response.body.$.accessToken}}
 
-### Items of that collection
-GET {{host}}/api/collections/{{collections.response.body.$[0].id}}/items
+### Sets of that collection (newest first)
+# @name sets
+GET {{host}}/api/collections/{{collections.response.body.$[0].id}}/sets
 Authorization: Bearer {{login.response.body.$.accessToken}}
 
-### Mark as favourite
-PUT {{host}}/api/collections/{{collections.response.body.$[0].id}}/favorite
+### One set (first of the list)
+GET {{host}}/api/sets/{{sets.response.body.$[0].id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Items of that set, in album order
+# @name items
+GET {{host}}/api/sets/{{sets.response.body.$[0].id}}/items
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### One item (first of the set), with its 30-day price change
+GET {{host}}/api/items/{{items.response.body.$[0].id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Price history: range = 7d | 30d | 1y
+GET {{host}}/api/items/{{items.response.body.$[0].id}}/prices?range=30d
+
+### ---------------------------------------------------------------------------
+### Your data (/api/me) — token required.
+### ---------------------------------------------------------------------------
+
+### Own 2 copies of that item (0 removes it; owning it also drops it from the wishlist)
+PUT {{host}}/api/me/items/{{items.response.body.$[0].id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "copies": 2
+}
+
+### Recently added
+GET {{host}}/api/me/items/recent?limit=8
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Add the second item of the set to the wishlist (409 if you already own it)
+PUT {{host}}/api/me/wishlist/{{items.response.body.$[1].id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Wishlist
+GET {{host}}/api/me/wishlist
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Remove from the wishlist
+DELETE {{host}}/api/me/wishlist/{{items.response.body.$[1].id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Mark the collection as favourite
+PUT {{host}}/api/me/favorites/{{collections.response.body.$[0].id}}
 Authorization: Bearer {{login.response.body.$.accessToken}}
 
 ### Remove favourite
-DELETE {{host}}/api/collections/{{collections.response.body.$[0].id}}/favorite
+DELETE {{host}}/api/me/favorites/{{collections.response.body.$[0].id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Level, XP and achievements
+GET {{host}}/api/me/progression
 Authorization: Bearer {{login.response.body.$.accessToken}}
