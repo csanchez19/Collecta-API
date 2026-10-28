@@ -23,14 +23,18 @@ namespace Collecta.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Attributes")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Code")
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("CollectionId")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ImageUrl")
@@ -45,9 +49,27 @@ namespace Collecta.API.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Rarity")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ThumbnailUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CollectionId");
+                    b.HasIndex("SetId");
+
+                    b.HasIndex("Source", "ExternalId")
+                        .IsUnique();
 
                     b.ToTable("CatalogItems");
                 });
@@ -62,6 +84,10 @@ namespace Collecta.API.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Kind")
@@ -79,9 +105,66 @@ namespace Collecta.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Source")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("Source", "ExternalId")
+                        .IsUnique();
+
                     b.ToTable("Collections");
+                });
+
+            modelBuilder.Entity("Collecta.API.Domain.CollectionSet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("ReleaseDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Series")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SymbolUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId");
+
+                    b.HasIndex("Source", "ExternalId")
+                        .IsUnique();
+
+                    b.ToTable("CollectionSets");
                 });
 
             modelBuilder.Entity("Collecta.API.Domain.FavoriteCollection", b =>
@@ -189,8 +272,19 @@ namespace Collecta.API.Migrations
 
             modelBuilder.Entity("Collecta.API.Domain.CatalogItem", b =>
                 {
-                    b.HasOne("Collecta.API.Domain.Collection", "Collection")
+                    b.HasOne("Collecta.API.Domain.CollectionSet", "Set")
                         .WithMany("Items")
+                        .HasForeignKey("SetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Set");
+                });
+
+            modelBuilder.Entity("Collecta.API.Domain.CollectionSet", b =>
+                {
+                    b.HasOne("Collecta.API.Domain.Collection", "Collection")
+                        .WithMany("Sets")
                         .HasForeignKey("CollectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -248,6 +342,11 @@ namespace Collecta.API.Migrations
                 });
 
             modelBuilder.Entity("Collecta.API.Domain.Collection", b =>
+                {
+                    b.Navigation("Sets");
+                });
+
+            modelBuilder.Entity("Collecta.API.Domain.CollectionSet", b =>
                 {
                     b.Navigation("Items");
                 });
