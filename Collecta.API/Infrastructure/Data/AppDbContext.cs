@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Collection> Collections => Set<Collection>();
+    public DbSet<CollectionSet> CollectionSets => Set<CollectionSet>();
     public DbSet<CatalogItem> CatalogItems => Set<CatalogItem>();
     public DbSet<UserItem> UserItems => Set<UserItem>();
     public DbSet<FavoriteCollection> FavoriteCollections => Set<FavoriteCollection>();
@@ -21,21 +22,46 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             user.HasIndex(u => u.Email).IsUnique();
         });
 
+        // Imported rows are identified by (Source, ExternalId) so re-imports update instead of duplicating.
+        // Rows added by hand leave both null; SQLite treats NULLs as distinct in a unique index.
         modelBuilder.Entity<Collection>(collection =>
         {
             collection.Property(c => c.Name).HasMaxLength(100);
             collection.Property(c => c.KindLabel).HasMaxLength(100);
             collection.Property(c => c.Kind).HasConversion<string>().HasMaxLength(20);
+            collection.Property(c => c.Source).HasMaxLength(20);
+            collection.Property(c => c.ExternalId).HasMaxLength(64);
+            collection.HasIndex(c => new { c.Source, c.ExternalId }).IsUnique();
+        });
+
+        modelBuilder.Entity<CollectionSet>(set =>
+        {
+            set.Property(s => s.Name).HasMaxLength(100);
+            set.Property(s => s.Series).HasMaxLength(100);
+            set.Property(s => s.LogoUrl).HasMaxLength(2048);
+            set.Property(s => s.SymbolUrl).HasMaxLength(2048);
+            set.Property(s => s.Source).HasMaxLength(20);
+            set.Property(s => s.ExternalId).HasMaxLength(64);
+            set.HasIndex(s => new { s.Source, s.ExternalId }).IsUnique();
+            set.HasOne(s => s.Collection)
+                .WithMany(c => c.Sets)
+                .HasForeignKey(s => s.CollectionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<CatalogItem>(item =>
         {
             item.Property(i => i.Name).HasMaxLength(150);
             item.Property(i => i.Code).HasMaxLength(32);
+            item.Property(i => i.Rarity).HasMaxLength(50);
             item.Property(i => i.ImageUrl).HasMaxLength(2048);
-            item.HasOne(i => i.Collection)
-                .WithMany(c => c.Items)
-                .HasForeignKey(i => i.CollectionId)
+            item.Property(i => i.ThumbnailUrl).HasMaxLength(2048);
+            item.Property(i => i.Source).HasMaxLength(20);
+            item.Property(i => i.ExternalId).HasMaxLength(64);
+            item.HasIndex(i => new { i.Source, i.ExternalId }).IsUnique();
+            item.HasOne(i => i.Set)
+                .WithMany(s => s.Items)
+                .HasForeignKey(i => i.SetId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
